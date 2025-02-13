@@ -107,7 +107,7 @@ datapath uut (
 // Clock generation
 initial begin
     clk = 0;
-    forever #2 clk = ~clk; // 100 MHz clock
+    forever #10 clk = ~clk; // 100 MHz clock
 end
 
 // Test stimulus
@@ -159,22 +159,41 @@ initial begin
     IO_data_in = 32'h00000000;
 
     // Apply reset
-    #10 clr = 0;
-
- // Load data into MDR and transfer to R0 and R1
-    #10 InPort_select_write = 1; IO_data_in = 32'h00000005; // Load 5 into MDR
-    #10 InPort_select_write = 0;
-	 #10 InPort_select = 1;
-	 #10 RF_enable = 1;
-	 #10 RF_write = 4'b0000; // Transfer MDR to R0
-    #10 RF_enable = 0; InPort_select = 0;
+    #5 clr = 0;
+	 
+    // Load data into the IO data and capture in inport register
+    #20 InPort_select_write = 1; IO_data_in = 32'h00000005; 
+	 #20 InPort_select_write = 0; 
+	 
+	 // Load data from inport onto bus and place into R0
+	#20 InPort_select = 1;
+	#20 RF_write = 4'b0001; RF_enable = 1;
+	#20 RF_enable = 0; RF_write = 4'b0000;
+	#20 InPort_select = 0;
+	
+	 // Load data into the IO data, place on bus and then capture in inport register
+   #20 InPort_select_write = 1; IO_data_in = 32'h00000003; 
+	#20 InPort_select_write = 0; 
+	
+	 // Load data from inport onto bus and place into R0
+	#20 InPort_select = 1;
+	#20 RF_write = 4'b0010; RF_enable = 1;
+	#20 RF_enable = 0; RF_write = 4'b0000;
+	#20 InPort_select = 0;
+		
+	//Putting R1 into RY for operation
+	#20 R1_select = 1;
+	#20 RY_select_write = 1; 
+	#20 R1_select= 0; RY_select_write = 0;
+	 
+	//Putting R2 on the bus for operation
+	#20 R2_select = 1;
+	
+	    // AND operation
+   #20 AND_select = 1;
+   #20 ZHI_select_write = 1; ZLO_select_write = 1;
+   #20 ZHI_select_write = 0; ZLO_select_write = 0; AND_select = 0;
     
-    #10 InPort_select_write = 1; IO_data_in = 32'h00000003; // Load 3 into MDR
-    #10 InPort_select_write = 0;
-	 #10 InPort_select = 1;
-	 #10 RF_enable = 1;
-	 #10 RF_write = 4'b0001; // Transfer MDR to R1
-    #10 RF_enable = 0; InPort_select = 0;
 
 end
 endmodule
