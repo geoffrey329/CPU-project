@@ -1,9 +1,9 @@
-module ALU #(parameter WIDTH)(
+module ALU #(parameter WIDTH = 32)(
     input wire [WIDTH-1:0] registerA,
     input wire [WIDTH-1:0] registerB,
     input wire [12:0] ALU_instruc,
     output reg [WIDTH-1:0] result,
-    output reg [WIDTH-1:0] result_hi,
+    output reg [WIDTH-1:0] result_hi, 
     output wire carryOut
 );
     parameter AND = 13'b0000000000001;
@@ -23,13 +23,18 @@ module ALU #(parameter WIDTH)(
     wire [WIDTH-1:0] add_result;
     wire [WIDTH-1:0] and_result;
     wire [WIDTH-1:0] or_result;
+    wire [WIDTH-1:0] not_result;
+    wire [WIDTH-1:0] neg_result;
     wire [WIDTH-1:0] shift_right_result;
     wire [WIDTH-1:0] shift_left_result;
     wire [2*WIDTH-1:0] mul_result;
+    wire [WIDTH-1:0] div_result;
+    wire [WIDTH-1:0] div_remainder;
         
     assign and_result = registerA & registerB;
     assign or_result = registerA | registerB;
-    //change this
+    assign not_result = ~registerA;
+
     CLA #(.WIDTH(WIDTH)) adder_module(
         .registerA(registerA),//0 for neg, a otherwise
         .registerB(ALU_instruc[2] ? registerB : ~registerB),//negate for neg for subtraction
@@ -54,24 +59,43 @@ module ALU #(parameter WIDTH)(
 	.multiplier(registerB),
 	.product(mul_result)
     );
+    CLA #(.WIDTH(WIDTH)) neg_module(
+	.registerA(registerA),//0 for neg, a otherwise
+        .registerB(1),//negate for neg for subtraction
+        .carryIn(0),//neg or subtract, using control signals
+        .result(neg_result),
+        .carry_out(carryOut)
+    );
+    array_divider #(.WIDTH(WIDTH)) div_module(
+	.dividend(registerA),
+	.divisor(registerB),
+	.quotient(div_result),
+	.remainder(div_remainder)
+   );
     always @(*) begin
         case(ALU_instruc)
-            ADD: result = add_result;
-	    SUB: result = add_result;
             AND: result = and_result;
             OR : result = or_result;
-	    ROTATERIGHT: result = shift_right_result;
+	    ADD: result = add_result;
+	    SUB: result = add_result;
+	    MUL:begin
+		result = mul_result[31:0];
+		result_hi = mul_result[63:32];
+	         end
+	    DIV:begin
+		result = div_result;
+		result_hi = div_remainder;
+		end
 	    SHIFTRIGHTLOGIC: result = shift_right_result;
-            SHIFTRIGHTARITH: result = shift_right_result;
+	    SHIFTRIGHTARITH: result = shift_right_result;
+	    ROTATERIGHT: result = shift_right_result;
 	    ROTATELEFT: result = shift_left_result;
 	    SHIFTLEFTLOGIC: result = shift_left_result;
-	    MUL: begin
-			    result = mul_result[31:0];
-			    result_hi = mul_result[63:32]; 
-			    end
+	    NEG: result = neg_result;
+	    NOT: result = not_result;
             default: begin
-		     result = 32'b0;
-		     result_hi = 32'b0;
+		     result = {WIDTH{32'b0}};
+		     result_hi = {WIDTH{32'b0}};
 		     end
         endcase
     end
