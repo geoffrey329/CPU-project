@@ -78,13 +78,7 @@ wire [31:0] R8_bus, R9_bus, R10_bus, R11_bus, R12_bus, R13_bus, R14_bus, R15_bus
 //Output Wires from other Registers going to the Bus Module
 wire [31:0] PC_bus, MDR_bus, HI_bus, LO_bus, ZHI_bus, ZLO_bus, C_bus;
 wire [31:0] InPort_bus;
-
-//Output Wires from the Bus to the OutPort
-wire [31:0] OutPort_bus;
-
-assign IO_data_out = OutPort_bus;
-
-
+wire [31:0] bus_out;
 
 
 //Devices
@@ -134,8 +128,9 @@ ALU #(.WIDTH(32))alu_datapath (
     .registerA(RY_ALU_A),
     .registerB(bus_out),
     .ALU_instruc({
-        AND_select, OR_select, ADD_select, SUB_select, MUL_select, DIV_select, 
-        SHR_select, SHRA_select, SHL_select, ROR_select, ROL_select, NEG_select, NOT_select
+        NOT_select, NEG_select, ROL_select, ROR_select, SHL_select, SHRA_select, SHR_select, DIV_select, 
+		  MUL_select, SUB_select, ADD_select, OR_select, AND_select
+    
     }),
     .result(ALU_C_ZLO),
     .result_hi(ALU_C_ZHI),
